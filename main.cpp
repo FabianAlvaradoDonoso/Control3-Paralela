@@ -96,20 +96,11 @@ int main(){
         char cadena[128];
         ifstream fe("prueba.txt");
 
-        while(!fe.eof()) {
-                fe >> cadena;
-                archivo.push_back(cadena);
-                // cout << cadena << endl;
-        }
-        fe.close();
-        // cout << archivo.size() -1 << endl;
-
-
         int mi_rango;   /* rango del proceso    */
         int p;   /* numero de procesos   */
         int tag = 0;   /* etiqueta del mensaje */
         int* vec = NULL; /* vector que representa una fila del archivo*/
-        vector<int> limpio;
+        vector<vector<int> > limpio;
         string vacio;
         int fuente = 1;
 
@@ -119,28 +110,31 @@ int main(){
 
         if (mi_rango != 0) {     /* -- Esclavos -- fuentes encargadas de realizar los calculos y verificar si los vectores recibidos cumplen con la matriz magica*/
                 string cadena;
-                MPI_Recv(&cadena, cadena.length(), MPI_STRING, 0, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE); /* Se recibe un sub vector para luego calcular el sub promedio*/
+                MPI_Recv(&cadena, 150, MPI_CHAR, 0, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE); /* Se recibe un sub vector para luego calcular el sub promedio*/
 
                 limpio = limpiaString(cadena);
                 if(comprobarCuboMagico(limpio)) {
-                        MPI_Send(cadena, cadena.length(), MPI_STRING, 0, tag, MPI_COMM_WORLD);
+                        MPI_Send(&cadena, 150, MPI_CHAR, 0, tag, MPI_COMM_WORLD);
                 }else{
-                        MPI_Send(vacio, vacio.length(), MPI_STRING, 0, tag, MPI_COMM_WORLD);
+                        MPI_Send(&vacio, 150, MPI_CHAR, 0, tag, MPI_COMM_WORLD);
                 }
 
         } else {        /* -- MASTER -- fuente encargada de distribuir los sub vectores*/
                 while(!fe.eof()) {
+                        cout << "Distribuyendo lineas" << endl;
                         fe >> cadena;
-                        MPI_Send(&cadena, cadena.length(), MPI_STRING, fuente, tag, MPI_COMM_WORLD);         /* Envía sub vectores a todas las fuentes (exceptuando MASTER)*/
+                        MPI_Send(&cadena, 150, MPI_CHAR, fuente, tag, MPI_COMM_WORLD);         /* Envía sub vectores a todas las fuentes (exceptuando MASTER)*/
                         fuente++;
                         if(fuente == p-1) {
                                 fuente = 1;
                         }
 
                 }
+                fe.close();
+
 
                 for (int fuente = 1; fuente < p; fuente++) {
-                        MPI_Recv(&cadena, cadena.length(), MPI_STRING, fuente, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE); /* Se recibe un sub vector por cada ESCLAVO, para luego calcular el promedio general*/
+                        MPI_Recv(&cadena, 150, MPI_CHAR, fuente, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE); /* Se recibe un sub vector por cada ESCLAVO, para luego calcular el promedio general*/
                         cout << cadena << endl;
                 }
 
